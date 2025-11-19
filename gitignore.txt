@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+venv.bak/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+*.cover
+*.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-* 
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# OpenCV/GUI display (no effect, but keep for clarity)
+# If running headless in containers, consider opencv-python-headless
+
+# Large model weights and data
+ai/model/*.pth
+ai/model/*.pt
+models/
+weights/
+data/
+
+# Logs
+logs/
+*.log
+
+# dotenv
+.env
+.env.*
+
+# Cache and virtualenv packages
+*.egg-info/
+__pypackages__/

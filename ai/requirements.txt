@@ -1,0 +1,7 @@
+# Core dependencies for running inference
+numpy
+opencv-python
+Pillow
+torch
+torchvision
+
