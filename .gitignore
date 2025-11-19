@@ -1,0 +1,51 @@
+# ==== Python ====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual environment folders
+.venv/
+venv/
+env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore build outputs
+build/
+dist/
+*.egg-info/
+
+# VSCode settings
+.vscode/
+
+# PyTorch / ML cache
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npz
+*.npy
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ==== For ML repos ====
+# Large datasets
+data/
+datasets/
+
+# Model outputs
+outputs/
+runs/
+
+# === Project specific ===
+# If you store OpenCV haarcascades or temp files
+temp/
