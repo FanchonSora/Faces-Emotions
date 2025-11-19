@@ -5,6 +5,7 @@ import numpy as np
 from collections import deque
 from ai.utils.preprocess import crop_face
 from ai.utils.emotion_map import UNITY_EMOTION_MAP
+from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -35,7 +36,8 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     else:
         img = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-        img_tensor = transform(img).unsqueeze(0).to(device)
+        img_pil = Image.fromarray(img)
+        img_tensor = transform(img_pil).unsqueeze(0).to(device)
 
         with torch.no_grad():
             output = model(img_tensor)
