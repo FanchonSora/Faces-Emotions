@@ -1,51 +1,72 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+import base64
 import cv2
-import torch
 import numpy as np
-from ai.model.load_model import load_vit_model, get_transform, EMOTION_LABELS
+import torch
+from fastapi import FastAPI, WebSocket
+from ai.model.load_model import load_vit_model, get_transform, EMOTION_LABELS 
 from ai.utils.emotion_map import UNITY_EMOTION_MAP
 from ai.utils.preprocess import crop_face
-from PIL import Image
 
 app = FastAPI()
 
+#  INIT
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"🖥️ Using device: {device}")
+
 model = load_vit_model(device=device)
 transform = get_transform()
 
-# Unity gửi JSON kiểu:
-# { "frame": [...pixel array...] }
-class FrameData(BaseModel):
-    frame: list
+print(f"📋 Emotion labels: {EMOTION_LABELS}")
+print(f"🗺️ Unity emotion map: {UNITY_EMOTION_MAP}")
 
 
-@app.post("/predict")
-def predict_emotion(data: FrameData):
+#  WEBSOCKET MAIN PIPELINE
+@app.websocket("/ws")
+async def emotion_ws(websocket: WebSocket):
+    await websocket.accept()
+    print("🔌 Unity WebSocket connected")
 
-    # Convert list → numpy array
-    frame_np = np.array(data.frame, dtype=np.uint8)
-    frame_np = frame_np.reshape((480, 640, 3))
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                import json
+                frame_data = json.loads(data)
+                frame_list = frame_data["frame"]
+                frame_np = np.array(frame_list, dtype=np.uint8).reshape((480, 640, 3))
 
-    # Detect face
-    face = crop_face(frame_np)
-    if face is None:
-        return {"emotion": "neutral"}
+            except Exception as e:
+                print(f"❌ Error decoding frame: {e}")
+                await websocket.send_json({"emotion": "neutral"})
+                continue
 
-    # Convert BGR → RGB
-    face_rgb = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+            # Convert RGB -> BGR (OpenCV expects BGR)
+            frame_np = cv2.cvtColor(frame_np, cv2.COLOR_RGB2BGR)
 
-    # Resize về đúng size model
-    face_resized = cv2.resize(face_rgb, (224, 224))
+            # Crop face
+            face = crop_face(frame_np)
+            if face is None:
+                print("⚠️ No face detected")
+                await websocket.send_json({"emotion": "neutral"})
+                continue
 
-    img_pil = Image.fromarray(face_resized)
-    img_tensor = transform(img_pil).unsqueeze(0).to(device)
+            # Transform
+            from PIL import Image
+            img_pil = Image.fromarray(cv2.cvtColor(face, cv2.COLOR_BGR2RGB))
+            img_tensor = transform(img_pil).unsqueeze(0).to(device)
 
-    with torch.no_grad():
-        output = model(img_tensor)
-        pred = torch.argmax(output, dim=1).item()
+            # Predict
+            with torch.no_grad():
+                output = model(img_tensor)
+                pred = torch.argmax(output, dim=1).item()
+            emotion_label = EMOTION_LABELS[pred]
+            unity_emotion = UNITY_EMOTION_MAP.get(emotion_label, "neutral")
 
-    emotion_label = EMOTION_LABELS[pred]
-    unity_emotion = UNITY_EMOTION_MAP[emotion_label]
+            # Send to Unity
+            await websocket.send_json({"emotion": unity_emotion})
+            print(f"🤖 Predicted: {emotion_label} → Unity: {unity_emotion}")
 
-    return {"emotion": unity_emotion}
+    except Exception as e:
+        print(f"❌ WebSocket error: {e}")
+    finally:
+        print("🔌 Unity WebSocket disconnected")
